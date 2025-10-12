@@ -1,0 +1,51 @@
+# ================================
+# Node & Next.js standard ignores
+# ================================
+
+# Dependencies
+node_modules/
+
+# Production build output
+.next/
+out/
+
+# Local Next.js environment files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor folders and settings
+.vscode/
+.idea/
+*.swp
+
+# TypeScript build output
+dist/
+build/
+*.tsbuildinfo
+
+# Coverage reports
+coverage/
+
+# Miscellaneous
+*.tgz
+*.zip
+
+# Next.js static export cache
+.next/static/chunks/*.map
+
+# Optional: ignore test results and cache
+jest.cache/
+.cache/
