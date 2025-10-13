@@ -1,35 +1,75 @@
-import { NextResponse } from 'next/server';
+import NextAuth from 'next-auth';
+import ResendProvider from 'next-auth/providers/resend';
+import { DrizzleAdapter } from '@auth/drizzle-adapter';
+import { Resend } from 'resend';
+import { db } from '@/lib/db';
+import { accounts, authSessions, users, verificationTokens } from '@/lib/db/schema';
 
-type AuthenticatedUser = {
-  id: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-};
+const emailFrom = process.env.EMAIL_FROM;
+const resendApiKey = process.env.RESEND_API_KEY;
 
-const demoUser: AuthenticatedUser = {
-  id: 'demo-user',
-  name: 'Invité TableRonde',
-  email: 'demo@tableronde.fr',
-};
-
-export const handlers = {
-  async GET() {
-    return NextResponse.json({ error: 'Authentification non configurée.' }, { status: 501 });
-  },
-  async POST() {
-    return NextResponse.json({ error: 'Authentification non configurée.' }, { status: 501 });
-  },
-};
-
-export async function auth() {
-  if (process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === 'true') {
-    return { user: demoUser };
-  }
-  return { user: null };
+if (!emailFrom) {
+  throw new Error('EMAIL_FROM environment variable is required for authentication.');
 }
 
-export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
+if (!resendApiKey) {
+  throw new Error('RESEND_API_KEY environment variable is required for authentication.');
+}
+
+const resendClient = new Resend(resendApiKey);
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: DrizzleAdapter(db, {
+    users,
+    accounts,
+    sessions: authSessions,
+    verificationTokens,
+  }),
+  session: { strategy: 'database' },
+  trustHost: true,
+  pages: {
+    signIn: '/signin',
+    verifyRequest: '/signin',
+  },
+  providers: [
+    ResendProvider({
+      apiKey: resendApiKey,
+      from: emailFrom,
+      sendVerificationRequest: async ({ identifier, url }) => {
+        await resendClient.emails.send({
+          from: emailFrom,
+          to: identifier,
+          subject: 'Votre lien de connexion TableRonde',
+          html: `
+            <div style="font-family: sans-serif; line-height: 1.6;">
+              <h1>Connexion à TableRonde</h1>
+              <p>Bonjour,</p>
+              <p>Utilisez le lien ci-dessous pour vous connecter. Il expirera dans 10 minutes.</p>
+              <p><a href="${url}" style="display:inline-block;padding:12px 20px;border-radius:9999px;background:#0f172a;color:#ffffff;text-decoration:none;">Se connecter</a></p>
+              <p>Ou copiez-collez cette URL dans votre navigateur :</p>
+              <p><a href="${url}">${url}</a></p>
+              <p>À très vite pour une nouvelle partie !</p>
+            </div>
+          `,
+        });
+      },
+    }),
+  ],
+  callbacks: {
+    async session({ session, user }) {
+      if (session.user && user) {
+        session.user.id = user.id;
+        session.user.name = user.name;
+        session.user.email = user.email;
+        session.user.image = user.image;
+      }
+      return session;
+    },
+  },
+  secret: process.env.AUTH_SECRET,
+});
+
+export async function getCurrentUser() {
   const session = await auth();
-  return session.user;
+  return session?.user ?? null;
 }

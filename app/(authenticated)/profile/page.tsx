@@ -1,12 +1,20 @@
+import { eq } from 'drizzle-orm';
 import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { users } from '@/lib/db/schema';
 
 export default async function ProfilePage() {
   const sessionUser = await getCurrentUser();
   const user = sessionUser
-    ? await prisma.user.findUnique({
-        where: { id: sessionUser.id },
-        include: { favoriteGames: true },
+    ? await db.query.users.findFirst({
+        where: eq(users.id, sessionUser.id),
+        with: {
+          favoriteGames: {
+            with: {
+              game: true,
+            },
+          },
+        },
       })
     : null;
 
@@ -35,9 +43,9 @@ export default async function ProfilePage() {
         <p className="text-sm text-slate-500">Ajoutez vos jeux préférés pour les retrouver plus vite.</p>
         <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-600">
           {user?.favoriteGames?.length ? (
-            user.favoriteGames.map((game) => (
-              <span key={game.id} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                {game.name}
+            user.favoriteGames.map((favorite) => (
+              <span key={favorite.gameId} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                {favorite.game?.name ?? 'Jeu inconnu'}
               </span>
             ))
           ) : (

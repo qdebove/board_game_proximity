@@ -15,38 +15,56 @@ interface Message {
   createdAt: string;
 }
 
-const initialMessages: Message[] = [
-  {
-    id: '1',
-    author: 'Léa',
-    body: "Salut ! On commence vers 20h, prévoyez d'arriver 10 min avant :)",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    author: 'Marc',
-    body: 'Je peux ramener des cookies maison !',
-    createdAt: new Date().toISOString(),
-  },
-];
+const initialMessages: Message[] = [];
 
 export function MessageThread({ sessionId }: MessageThreadProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const { publish } = useToast();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!input.trim()) return;
-    const newMessage: Message = {
-      id: crypto.randomUUID(),
-      author: 'Vous',
-      body: input.trim(),
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, newMessage]);
-    setInput('');
-    publish({ title: 'Message envoyé', description: 'Votre message a été partagé avec les participants.' });
+    if (!input.trim() || isSending) return;
+
+    setIsSending(true);
+
+    try {
+      const response = await fetch(`/api/sessions/${sessionId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ body: input.trim() }),
+      });
+
+      if (!response.ok) {
+        throw new Error('La messagerie est indisponible pour le moment.');
+      }
+
+      const { message } = (await response.json()) as {
+        message: { id: string; body: string; createdAt: string };
+      };
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: message.id,
+          author: 'Vous',
+          body: message.body,
+          createdAt: message.createdAt,
+        },
+      ]);
+      setInput('');
+      publish({ title: 'Message envoyé', description: 'Votre message a été partagé avec les participants.' });
+    } catch (error) {
+      publish({
+        title: 'Envoi impossible',
+        description: error instanceof Error ? error.message : 'Réessayez dans quelques instants.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -73,12 +91,14 @@ export function MessageThread({ sessionId }: MessageThreadProps) {
           placeholder="Partagez un message ou proposez ce que vous apportez..."
           value={input}
           onChange={(event) => setInput(event.target.value)}
+          disabled={isSending}
         />
         <button
           type="submit"
-          className="h-fit rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
+          className="h-fit rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60"
+          disabled={isSending}
         >
-          Envoyer
+          {isSending ? 'Envoi...' : 'Envoyer'}
         </button>
       </form>
     </section>

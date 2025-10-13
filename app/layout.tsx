@@ -5,6 +5,8 @@ import { ReactNode } from 'react';
 import { QueryProvider } from '@/providers/query-provider';
 import { ToastProvider } from '@/components/ui/use-toast';
 import { PwaProvider } from '@/providers/pwa-provider';
+import { AuthProvider } from '@/providers/auth-provider';
+import { auth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -21,16 +23,20 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const session = await auth();
+
   return (
     <html lang="fr" suppressHydrationWarning>
       <body className={cn('min-h-screen bg-slate-50 text-slate-900', GeistSans.variable)}>
-        <QueryProvider>
-          <ToastProvider>
-            <PwaProvider />
-            {children}
-          </ToastProvider>
-        </QueryProvider>
+        <AuthProvider session={session}>
+          <QueryProvider>
+            <ToastProvider>
+              <PwaProvider />
+              {children}
+            </ToastProvider>
+          </QueryProvider>
+        </AuthProvider>
       </body>
     </html>
   );

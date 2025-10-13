@@ -17,6 +17,8 @@ export type SessionCardProps = {
       | { type: 'MONEY'; priceCents: number }
       | { type: 'ITEMS'; note: string };
     visibility: 'PUBLIC' | 'FRIENDS' | 'LINK';
+    latitude?: number | null;
+    longitude?: number | null;
   };
   compact?: boolean;
 };

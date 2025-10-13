@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { messages as messagesTable } from '@/lib/db/schema';
 import { getCurrentUser } from '@/lib/auth';
 
 const messageSchema = z.object({
@@ -20,13 +21,14 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const message = await prisma.message.create({
-    data: {
+  const [message] = await db
+    .insert(messagesTable)
+    .values({
       body: parsed.data.body,
       sessionId: id,
       authorId: user.id,
-    },
-  });
+    })
+    .returning();
 
   return NextResponse.json({ message });
 }
