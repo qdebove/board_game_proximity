@@ -1,13 +1,14 @@
-import { eq } from 'drizzle-orm';
 import { getCurrentUser } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 
 export default async function ProfilePage() {
   const sessionUser = await getCurrentUser();
+  const userId = sessionUser?.id ?? '';
   const user = sessionUser
     ? await db.query.users.findFirst({
-        where: eq(users.id, sessionUser.id),
+        where: eq(users.id, userId),
         with: {
           favoriteGames: {
             with: {

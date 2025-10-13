@@ -1,6 +1,6 @@
-import { neonConfig, neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
-import * as schema from './schema';
+import { neon, neonConfig } from '@neondatabase/serverless';
+import { drizzle, NeonHttpDatabase } from 'drizzle-orm/neon-http';
+import { schema } from './schema';
 
 neonConfig.fetchConnectionCache = true;
 
@@ -12,6 +12,7 @@ if (!connectionString) {
 
 const sql = neon(connectionString);
 
-export const db = drizzle(sql, { schema, logger: process.env.NODE_ENV === 'development' });
+export const db: NeonHttpDatabase<typeof schema> = drizzle(sql, { schema, logger: process.env.NODE_ENV === 'development' });
 export type DB = typeof db;
 export { schema };
+

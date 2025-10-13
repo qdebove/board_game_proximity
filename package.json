@@ -30,7 +30,7 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^0.545.0",
     "next": "^15.5.4",
-    "next-auth": "5.0.0-beta.28",
+    "next-auth": "^5.0.0-beta.29",
     "next-nprogress-bar": "^2.4.7",
     "next-safe-action": "^7.3.0",
     "next-seo": "^6.8.0",

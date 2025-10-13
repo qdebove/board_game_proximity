@@ -1,9 +1,9 @@
-import NextAuth from 'next-auth/next';
-import ResendProvider from 'next-auth/providers/resend';
-import { DrizzleAdapter } from '@auth/drizzle-adapter';
-import { Resend } from 'resend';
 import { db } from '@/lib/db';
 import { accounts, authSessions, users, verificationTokens } from '@/lib/db/schema';
+import { DrizzleAdapter } from '@auth/drizzle-adapter';
+import NextAuth from 'next-auth';
+import ResendProvider from 'next-auth/providers/resend';
+import { Resend } from 'resend';
 
 const emailFrom = process.env.EMAIL_FROM;
 const resendApiKey = process.env.RESEND_API_KEY;
@@ -20,10 +20,10 @@ const resendClient = new Resend(resendApiKey);
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db, {
-    users,
-    accounts,
-    sessions: authSessions,
-    verificationTokens,
+    usersTable: users,
+    accountsTable: accounts,
+    sessionsTable: authSessions,
+    verificationTokensTable: verificationTokens,
   }),
   session: { strategy: 'database' },
   trustHost: true,
