@@ -8,6 +8,7 @@ import { PwaProvider } from '@/providers/pwa-provider';
 import { AuthProvider } from '@/providers/auth-provider';
 import { auth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
+import { AppRouteProgressBar } from '@/components/ui/app-progress-bar';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
@@ -32,6 +33,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <AuthProvider session={session}>
           <QueryProvider>
             <ToastProvider>
+              <AppRouteProgressBar />
               <PwaProvider />
               {children}
             </ToastProvider>
