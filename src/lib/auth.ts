@@ -1,4 +1,4 @@
-import NextAuth from 'next-auth';
+import NextAuth from 'next-auth/next';
 import ResendProvider from 'next-auth/providers/resend';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { Resend } from 'resend';
