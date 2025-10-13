@@ -9,13 +9,14 @@ import { fr } from 'date-fns/locale';
 import { MessageThread } from '@/components/session/message-thread';
 
 interface SessionPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function SessionPage({ params }: SessionPageProps) {
-  const session = mockSessions.find((item) => item.id === params.id);
+export default async function SessionPage({ params }: SessionPageProps) {
+  const { id } = await params;
+  const session = mockSessions.find((item) => item.id === id);
   if (!session) {
     notFound();
   }
@@ -44,7 +45,7 @@ export default function SessionPage({ params }: SessionPageProps) {
             ))}
           </div>
           <p className="text-sm text-slate-600">
-            Adresse exacte partagée après validation de votre participation. Contactez l'hôte via la messagerie ci-dessous.
+            Adresse exacte partagée après validation de votre participation. Contactez l&rsquo;hôte via la messagerie ci-dessous.
           </p>
           <button className="inline-flex items-center justify-center rounded-full bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700">
             Demander une place
