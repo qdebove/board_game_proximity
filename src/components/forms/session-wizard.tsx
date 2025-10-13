@@ -134,7 +134,7 @@ function StepInfos() {
           <textarea
             {...register('description')}
             className="min-h-[120px] w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
-            placeholder="Décrivez l'ambiance, les jeux, etc."
+            placeholder="Décrivez l’ambiance, les jeux, etc."
           />
         </label>
         <div className="space-y-2">
@@ -170,7 +170,7 @@ function StepLocation() {
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-900">Où cela se passe ?</h2>
-      <p className="text-sm text-slate-500">Indiquez un secteur général, l'adresse précise sera partagée après confirmation.</p>
+      <p className="text-sm text-slate-500">Indiquez un secteur général, l’adresse précise sera partagée après confirmation.</p>
       <div className="mt-4 space-y-4">
         <label className="space-y-2">
           <span className="text-sm font-medium text-slate-700">Quartier / secteur</span>
@@ -261,7 +261,7 @@ function StepAvailability() {
 }
 
 function StepContributions() {
-  const { register, watch, control } = useFormContext<SessionFormValues>();
+  const { register, watch } = useFormContext<SessionFormValues>();
   const type = watch('contributionType');
 
   return (

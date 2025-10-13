@@ -19,7 +19,7 @@ const initialMessages: Message[] = [
   {
     id: '1',
     author: 'Léa',
-    body: 'Salut ! On commence vers 20h, prévoyez d'arriver 10 min avant :)',
+    body: "Salut ! On commence vers 20h, prévoyez d'arriver 10 min avant :)",
     createdAt: new Date().toISOString(),
   },
   {

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { FilterBar } from '@/components/layout/filter-bar';
 import { SessionCard } from '@/components/session/session-card';
 import { mockSessions } from '@/lib/mock-data';
@@ -17,7 +18,9 @@ export default function HomePage() {
           <p className="text-lg text-slate-600">
             TableRonde connecte les joueurs passionnés pour des parties conviviales. Filtrez par jeu, date et proximité.
           </p>
-          <FilterBar variant="hero" />
+          <Suspense fallback={<div className="text-sm text-slate-500">Chargement des filtres…</div>}>
+            <FilterBar variant="hero" />
+          </Suspense>
         </div>
         <div className="flex flex-col gap-3 rounded-2xl bg-slate-900/90 p-6 text-white">
           <p className="text-sm uppercase tracking-wide text-white/70">Ce soir</p>

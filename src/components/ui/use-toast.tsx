@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import * as ToastPrimitives from '@radix-ui/react-toast';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
@@ -12,17 +11,6 @@ type Toast = {
   action?: React.ReactNode;
   duration?: number;
 };
-
-const ToastViewport = React.forwardRef<React.ElementRef<typeof ToastPrimitives.Viewport>, React.ComponentPropsWithoutRef<typeof ToastPrimitives.Viewport>>(
-  ({ className, ...props }, ref) => (
-    <ToastPrimitives.Viewport
-      ref={ref}
-      className={cn('fixed top-0 right-0 z-50 flex max-h-screen w-full max-w-sm flex-col gap-2 p-4', className)}
-      {...props}
-    />
-  )
-);
-ToastViewport.displayName = ToastPrimitives.Viewport.displayName;
 
 const toastVariants = cva(
   'group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2',
@@ -41,17 +29,46 @@ const toastVariants = cva(
 
 type ToastProps = Toast & VariantProps<typeof toastVariants>;
 
-const ToastContext = React.createContext<{
+type ToastContextValue = {
   toasts: ToastProps[];
   dismiss: (id: string) => void;
   publish: (toast: Omit<ToastProps, 'id'>) => void;
-} | null>(null);
+};
+
+const ToastContext = React.createContext<ToastContextValue | null>(null);
+
+function ToastViewport({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="pointer-events-none fixed top-0 right-0 z-50 flex max-h-screen w-full max-w-sm flex-col gap-2 p-4">
+      {children}
+    </div>
+  );
+}
+
+function ToastItem({ toast, onDismiss }: { toast: ToastProps; onDismiss: (id: string) => void }) {
+  React.useEffect(() => {
+    if (!toast.duration || toast.duration <= 0) return;
+
+    const timeout = window.setTimeout(() => onDismiss(toast.id), toast.duration);
+    return () => window.clearTimeout(timeout);
+  }, [toast, onDismiss]);
+
+  return (
+    <div className={cn(toastVariants({ variant: toast.variant }))} role="status">
+      <div className="flex flex-col gap-1">
+        {toast.title ? <p className="font-semibold">{toast.title}</p> : null}
+        {toast.description ? <p className="text-sm text-slate-600">{toast.description}</p> : null}
+      </div>
+      {toast.action}
+    </div>
+  );
+}
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = React.useState<ToastProps[]>([]);
 
   const publish = React.useCallback((toast: Omit<ToastProps, 'id'>) => {
-    setToasts((prev) => [...prev, { ...toast, id: crypto.randomUUID() }]);
+    setToasts((prev) => [...prev, { ...toast, id: crypto.randomUUID(), duration: toast.duration ?? 5000 }]);
   }, []);
 
   const dismiss = React.useCallback((id: string) => {
@@ -61,25 +78,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toasts, dismiss, publish }}>
       {children}
-      <ToastPrimitives.Provider swipeDirection="right">
-        {toasts.map(({ id, variant, title, description, action, duration }) => (
-          <ToastPrimitives.Root
-            key={id}
-            duration={duration ?? 5000}
-            onOpenChange={(open) => {
-              if (!open) dismiss(id);
-            }}
-            className={toastVariants({ variant })}
-          >
-            <div className="flex flex-col gap-1">
-              {title ? <p className="font-semibold">{title}</p> : null}
-              {description ? <p className="text-sm text-slate-600">{description}</p> : null}
-            </div>
-            {action}
-          </ToastPrimitives.Root>
+      <ToastViewport>
+        {toasts.map((toast) => (
+          <ToastItem key={toast.id} toast={toast} onDismiss={dismiss} />
         ))}
-        <ToastViewport />
-      </ToastPrimitives.Provider>
+      </ToastViewport>
     </ToastContext.Provider>
   );
 }

@@ -7,7 +7,8 @@ const messageSchema = z.object({
   body: z.string().min(1).max(500),
 });
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
   const user = await getCurrentUser();
   if (!user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -22,7 +23,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   const message = await prisma.message.create({
     data: {
       body: parsed.data.body,
-      sessionId: params.id,
+      sessionId: id,
       authorId: user.id,
     },
   });

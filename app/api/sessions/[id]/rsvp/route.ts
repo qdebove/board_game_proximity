@@ -8,7 +8,8 @@ const rsvpSchema = z.object({
   willBring: z.string().optional(),
 });
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
   const user = await getCurrentUser();
   if (!user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -23,7 +24,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   const rsvp = await prisma.rsvp.upsert({
     where: {
       sessionId_userId: {
-        sessionId: params.id,
+        sessionId: id,
         userId: user.id,
       },
     },
@@ -33,7 +34,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
       status: 'PENDING',
     },
     create: {
-      sessionId: params.id,
+      sessionId: id,
       userId: user.id,
       note: parsed.data.note,
       willBring: parsed.data.willBring,
