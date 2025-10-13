@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation';
-import { mockSessions } from '@/lib/mock-data';
 import { ContributionPill } from '@/components/ui/contribution-pill';
 import { GameBadge } from '@/components/ui/game-badge';
 import { MapCompact } from '@/components/map/map-compact';
@@ -7,6 +6,7 @@ import { CapacityDots } from '@/components/ui/capacity-dots';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { MessageThread } from '@/components/session/message-thread';
+import { fetchSessionSummary } from '@/lib/db/queries/sessions';
 
 interface SessionPageProps {
   params: Promise<{
@@ -16,13 +16,16 @@ interface SessionPageProps {
 
 export default async function SessionPage({ params }: SessionPageProps) {
   const { id } = await params;
-  const session = mockSessions.find((item) => item.id === id);
+  const session = await fetchSessionSummary(id);
   if (!session) {
     notFound();
   }
 
   const startDate = new Date(session.startsAt);
   const endDate = new Date(session.endsAt);
+  const hasLocation = typeof session.latitude === 'number' && typeof session.longitude === 'number';
+  const fallbackLat = 45.76;
+  const fallbackLng = 4.84;
 
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
@@ -44,6 +47,9 @@ export default async function SessionPage({ params }: SessionPageProps) {
               <GameBadge key={game} name={game} />
             ))}
           </div>
+          {session.description ? (
+            <p className="text-sm text-slate-600">{session.description}</p>
+          ) : null}
           <p className="text-sm text-slate-600">
             Adresse exacte partagée après validation de votre participation. Contactez l&rsquo;hôte via la messagerie ci-dessous.
           </p>
@@ -59,8 +65,8 @@ export default async function SessionPage({ params }: SessionPageProps) {
             {
               id: session.id,
               title: session.title,
-              lat: 45.76,
-              lng: 4.84,
+              lat: hasLocation ? (session.latitude as number) : fallbackLat,
+              lng: hasLocation ? (session.longitude as number) : fallbackLng,
             },
           ]}
           zoom={13}

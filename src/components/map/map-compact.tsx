@@ -43,14 +43,18 @@ export function MapCompact({ points, tileLayerOptions, ...props }: MapCompactPro
     return { lat, lng };
   }, [points]);
 
+  const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_API_KEY;
+  const tileUrl = maptilerKey
+    ? `https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${maptilerKey}`
+    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const attribution = maptilerKey
+    ? "&copy; <a href='https://www.maptiler.com/copyright/'>MapTiler</a> & <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>"
+    : "&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>";
+
   return (
     <div className="h-80 w-full overflow-hidden rounded-2xl border border-slate-200">
       <MapContainer center={[center.lat, center.lng]} zoom={12} style={{ height: '100%', width: '100%' }} {...props}>
-        <TileLayer
-          attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>"
-          url={process.env.NEXT_PUBLIC_MAP_TILE_URL ?? 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'}
-          {...tileLayerOptions}
-        />
+        <TileLayer attribution={attribution} url={tileUrl} {...tileLayerOptions} />
         {points.map((point) => (
           <Marker key={point.id} position={[point.lat, point.lng]} title={point.title} />
         ))}
