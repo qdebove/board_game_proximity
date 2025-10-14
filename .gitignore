@@ -50,3 +50,6 @@ drizzle/
 # Optional: ignore test results and cache
 jest.cache/
 .cache/
+
+.env
+.env.*
