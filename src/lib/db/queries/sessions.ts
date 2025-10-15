@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { asc, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import {
   contributionTypeEnum,
@@ -8,19 +8,18 @@ import {
   sessionGames,
   sessionStatusEnum,
   visibilityEnum,
+  rsvpStatusEnum,
 } from '@/lib/db/schema';
 
 type ContributionType = (typeof contributionTypeEnum.enumValues)[number];
 type Visibility = (typeof visibilityEnum.enumValues)[number];
 
 type GameSessionRecord = typeof gameSessions.$inferSelect;
-type SessionGameRecord = typeof sessionGames.$inferSelect;
-type GameRecord = typeof games.$inferSelect;
-type RsvpRecord = typeof rsvps.$inferSelect;
+type RsvpStatus = (typeof rsvpStatusEnum.enumValues)[number];
 
-type GameSessionWithRelations = GameSessionRecord & {
-  games: Array<SessionGameRecord & { game: GameRecord | null }>;
-  rsvps: RsvpRecord[];
+type SessionRelations = {
+  games: string[];
+  rsvpStatuses: RsvpStatus[];
 };
 
 export type SessionSummary = {
@@ -53,11 +52,9 @@ const mapContribution = (type: ContributionType, priceCents?: number | null, not
   return { type: 'NONE' } as const;
 };
 
-const serializeSession = (session: GameSessionWithRelations): SessionSummary => {
-  const attendeesCount = session.rsvps.filter((entry) => entry.status !== 'DECLINED').length;
-  const gamesList = session.games
-    .map((entry) => entry.game?.name)
-    .filter((name): name is string => Boolean(name));
+const serializeSession = (session: GameSessionRecord, relations: SessionRelations): SessionSummary => {
+  const attendeesCount = relations.rsvpStatuses.filter((status) => status !== 'DECLINED').length;
+  const gamesList = relations.games.filter((name): name is string => Boolean(name));
 
   return {
     id: session.id,
@@ -78,37 +75,20 @@ const serializeSession = (session: GameSessionWithRelations): SessionSummary => 
 };
 
 export async function listUpcomingSessions(limit?: number) {
-  const sessions = await db.query.gameSessions.findMany({
-    orderBy: (table, { asc: orderAsc, desc: orderDesc }) => [orderAsc(table.startsAt), orderDesc(table.createdAt)],
-    limit,
-    with: {
-      games: {
-        with: {
-          game: true,
-        },
-      },
-      rsvps: true,
-    },
-  });
+  const baseQuery = db
+    .select()
+    .from(gameSessions)
+    .orderBy(asc(gameSessions.startsAt), desc(gameSessions.createdAt));
+  const sessions = await (typeof limit === 'number' ? baseQuery.limit(limit) : baseQuery);
 
-  return sessions.map(serializeSession);
+  return hydrateSessions(sessions);
 }
 
 export async function listLatestSessions(limit: number) {
-  const sessions = await db.query.gameSessions.findMany({
-    orderBy: (table, { desc: orderDesc }) => [orderDesc(table.createdAt)],
-    limit,
-    with: {
-      games: {
-        with: {
-          game: true,
-        },
-      },
-      rsvps: true,
-    },
-  });
+  const baseQuery = db.select().from(gameSessions).orderBy(desc(gameSessions.createdAt));
+  const sessions = await baseQuery.limit(limit);
 
-  return sessions.map(serializeSession);
+  return hydrateSessions(sessions);
 }
 
 export async function findSessionsByIds(ids: string[]) {
@@ -116,33 +96,83 @@ export async function findSessionsByIds(ids: string[]) {
     return [];
   }
 
-  const sessions = await db.query.gameSessions.findMany({
-    where: (table, { inArray: inArr }) => inArr(table.id, ids),
-    with: {
-      games: {
-        with: {
-          game: true,
-        },
-      },
-      rsvps: true,
-    },
-  });
+  const sessions = await db
+    .select()
+    .from(gameSessions)
+    .where(inArray(gameSessions.id, ids));
 
-  return sessions.map(serializeSession);
+  return hydrateSessions(sessions);
 }
 
 export async function fetchSessionSummary(id: string) {
-  const session = await db.query.gameSessions.findFirst({
-    where: eq(gameSessions.id, id),
-    with: {
-      games: {
-        with: {
-          game: true,
-        },
-      },
-      rsvps: true,
-    },
-  });
+  const session = await db
+    .select()
+    .from(gameSessions)
+    .where(eq(gameSessions.id, id))
+    .limit(1);
 
-  return session ? serializeSession(session) : null;
+  if (session.length === 0) {
+    return null;
+  }
+
+  const [summary] = await hydrateSessions(session);
+
+  return summary ?? null;
+}
+
+async function hydrateSessions(sessions: GameSessionRecord[]): Promise<SessionSummary[]> {
+  if (sessions.length === 0) {
+    return [];
+  }
+
+  const sessionIds = sessions.map((session) => session.id);
+  const gamesBySession = new Map<string, string[]>();
+  const rsvpsBySession = new Map<string, RsvpStatus[]>();
+
+  for (const id of sessionIds) {
+    gamesBySession.set(id, []);
+    rsvpsBySession.set(id, []);
+  }
+
+  const sessionGamesRows = await db
+    .select({
+      sessionId: sessionGames.sessionId,
+      gameName: games.name,
+    })
+    .from(sessionGames)
+    .leftJoin(games, eq(sessionGames.gameId, games.id))
+    .where(inArray(sessionGames.sessionId, sessionIds));
+
+  for (const row of sessionGamesRows) {
+    if (!row.sessionId) {
+      continue;
+    }
+
+    if (row.gameName) {
+      gamesBySession.get(row.sessionId)?.push(row.gameName);
+    }
+  }
+
+  const rsvpsRows = await db
+    .select({
+      sessionId: rsvps.sessionId,
+      status: rsvps.status,
+    })
+    .from(rsvps)
+    .where(inArray(rsvps.sessionId, sessionIds));
+
+  for (const row of rsvpsRows) {
+    if (!row.sessionId) {
+      continue;
+    }
+
+    rsvpsBySession.get(row.sessionId)?.push(row.status);
+  }
+
+  return sessions.map((session) =>
+    serializeSession(session, {
+      games: gamesBySession.get(session.id) ?? [],
+      rsvpStatuses: rsvpsBySession.get(session.id) ?? [],
+    }),
+  );
 }
