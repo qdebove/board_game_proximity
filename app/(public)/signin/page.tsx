@@ -3,8 +3,8 @@ import Link from 'next/link';
 
 import { EmailSignInForm } from './signin-form';
 
-export default function SignInPage() {
-  const cookieStore = cookies();
+export default async function SignInPage() {
+  const cookieStore = await cookies();
   const csrfCookie = cookieStore.get('next-auth.csrf-token')?.value;
   const csrfToken = csrfCookie?.split('|')[0];
 

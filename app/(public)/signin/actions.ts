@@ -1,9 +1,8 @@
 'use server';
 
-import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { signIn } from '@/lib/auth';
+import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { AuthError } from 'next-auth';
-import { isRedirectError } from 'next/dist/client/components/redirect';
 import { z } from 'zod';
 
 const emailSignInSchema = z.object({
@@ -80,10 +79,6 @@ export async function requestEmailSignIn(
       message: 'Un lien magique vient de vous être envoyé. Consultez votre boîte mail.',
     };
   } catch (error) {
-    if (isRedirectError(error)) {
-      throw error;
-    }
-
     if (error instanceof AuthError) {
       return {
         status: 'error',
