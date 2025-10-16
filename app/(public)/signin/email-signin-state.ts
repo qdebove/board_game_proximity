@@ -1,6 +1,7 @@
 export type EmailSignInFormState = {
   status: 'idle' | 'success' | 'error';
   message?: string;
+  errorType?: string;
   errors?: {
     email?: string[];
   };

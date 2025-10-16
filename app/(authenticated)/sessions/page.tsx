@@ -15,6 +15,8 @@ export default async function SessionsPage() {
       title: session.title,
       lat: session.latitude as number,
       lng: session.longitude as number,
+      description: session.addressApprox,
+      href: `/sessions/${session.id}`,
     }));
 
   return (
@@ -33,9 +35,24 @@ export default async function SessionsPage() {
           )}
         </div>
         <div className="lg:sticky lg:top-24">
-          <MapCompact
-            points={points}
-          />
+          <div className="space-y-3 rounded-3xl bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-slate-900">Carte des sessions</h2>
+              <span className="text-xs text-slate-500">
+                {points.length > 0
+                  ? `${points.length} session${points.length > 1 ? 's' : ''} localisée${
+                      points.length > 1 ? 's' : ''
+                    }`
+                  : 'Aucune session géolocalisée'}
+              </span>
+            </div>
+            <MapCompact points={points} className="h-[420px]" scrollWheelZoom={false} />
+            {points.length === 0 ? (
+              <p className="text-xs text-slate-500">
+                Ajoutez une adresse lors de la création d’une session pour l’afficher sur la carte.
+              </p>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>

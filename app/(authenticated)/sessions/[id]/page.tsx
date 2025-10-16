@@ -60,18 +60,25 @@ export default async function SessionPage({ params }: SessionPageProps) {
         <MessageThread sessionId={session.id} />
       </div>
       <aside className="space-y-4">
-        <MapCompact
-          points={[
-            {
-              id: session.id,
-              title: session.title,
-              lat: hasLocation ? (session.latitude as number) : fallbackLat,
-              lng: hasLocation ? (session.longitude as number) : fallbackLng,
-            },
-          ]}
-          zoom={13}
-          scrollWheelZoom={false}
-        />
+        <div className="space-y-3 rounded-3xl bg-white p-4 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-900">Localisation approximative</h2>
+          <MapCompact
+            points={[
+              {
+                id: session.id,
+                title: session.title,
+                lat: hasLocation ? (session.latitude as number) : fallbackLat,
+                lng: hasLocation ? (session.longitude as number) : fallbackLng,
+                description: session.addressApprox,
+              },
+            ]}
+            zoom={13}
+            scrollWheelZoom={false}
+          />
+          <p className="text-xs text-slate-500">
+            La position affichée est volontairement approximative. Vous recevrez l’adresse précise après validation par l’hôte.
+          </p>
+        </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
           <h2 className="text-base font-semibold text-slate-900">Contributions souhaitées</h2>
           <p>
