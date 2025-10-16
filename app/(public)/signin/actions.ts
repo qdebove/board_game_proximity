@@ -42,6 +42,7 @@ export async function requestEmailSignIn(
     return {
       status: 'error',
       message: 'Merci de corriger les erreurs indiquées avant de réessayer.',
+      errorType: 'ValidationError',
       errors: fieldErrors,
     };
   }
@@ -49,14 +50,22 @@ export async function requestEmailSignIn(
   try {
     const { email, callbackUrl, csrfToken } = parsed.data;
 
+    if (!csrfToken) {
+      return {
+        status: 'error',
+        errorType: 'MissingCSRF',
+        message:
+          getAuthErrorMessage('MissingCSRF') ??
+          'Votre session de sécurité a expiré. Rafraîchissez la page puis réessayez.',
+      };
+    }
+
     const signInOptions: Record<string, unknown> = {
       email,
       redirect: false,
     };
 
-    if (csrfToken) {
-      signInOptions.csrfToken = csrfToken;
-    }
+    signInOptions.csrfToken = csrfToken;
 
     if (callbackUrl) {
       signInOptions.redirectTo = callbackUrl;
@@ -75,12 +84,14 @@ export async function requestEmailSignIn(
         message:
           getAuthErrorMessage(error.type) ??
           'Une erreur est survenue lors de l’envoi du lien magique. Veuillez réessayer.',
+        errorType: error.type,
       };
     }
 
     return {
       status: 'error',
       message: 'Une erreur inattendue est survenue. Veuillez réessayer plus tard.',
+      errorType: 'UnknownError',
     };
   }
 }
