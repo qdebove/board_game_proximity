@@ -5,11 +5,11 @@ import { useSearchParams } from 'next/navigation';
 
 import { getAuthErrorMessage } from '@/lib/auth-errors';
 
+import { requestEmailSignIn } from './actions';
 import {
   EMAIL_SIGN_IN_INITIAL_STATE,
-  requestEmailSignIn,
   type EmailSignInFormState,
-} from './actions';
+} from './email-signin-state';
 
 type EmailSignInFormProps = {
   csrfToken?: string;

@@ -5,6 +5,8 @@ import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { AuthError } from 'next-auth';
 import { z } from 'zod';
 
+import type { EmailSignInFormState } from './email-signin-state';
+
 const emailSignInSchema = z.object({
   email: z
     .string({ required_error: 'Veuillez renseigner votre adresse email.' })
@@ -13,18 +15,6 @@ const emailSignInSchema = z.object({
   callbackUrl: z.string().optional(),
   csrfToken: z.string().optional(),
 });
-
-export type EmailSignInFormState = {
-  status: 'idle' | 'success' | 'error';
-  message?: string;
-  errors?: {
-    email?: string[];
-  };
-};
-
-export const EMAIL_SIGN_IN_INITIAL_STATE: EmailSignInFormState = {
-  status: 'idle',
-};
 
 export async function requestEmailSignIn(
   _prevState: EmailSignInFormState,
