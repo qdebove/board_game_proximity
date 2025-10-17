@@ -1,36 +1,37 @@
 'use client';
 
-import { useActionState, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { getCsrfToken } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
+import { useActionState, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { getAuthErrorMessage } from '@/lib/auth-errors';
 
-import { requestEmailSignIn } from './actions';
 import {
   EMAIL_SIGN_IN_INITIAL_STATE,
   type EmailSignInFormState,
 } from './email-signin-state';
 
-type EmailSignInFormProps = {
-  csrfToken?: string;
-};
+type Props = {
+  csrfToken?: string
+  requestEmailSignIn: (
+    prev: EmailSignInFormState,
+    formData: FormData
+  ) => Promise<EmailSignInFormState>
+}
 
-export function EmailSignInForm({ csrfToken }: EmailSignInFormProps) {
+export function EmailSignInForm({ csrfToken, requestEmailSignIn }: Props) {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') ?? undefined;
   const queryErrorType = searchParams.get('error');
   const queryErrorMessage = getAuthErrorMessage(queryErrorType);
 
-  const [state, formAction, isPending] = useActionState<
-    EmailSignInFormState,
-    FormData
-  >(requestEmailSignIn, EMAIL_SIGN_IN_INITIAL_STATE);
+  const [state, formAction, isPending] = useActionState<EmailSignInFormState, FormData>(requestEmailSignIn, EMAIL_SIGN_IN_INITIAL_STATE);
   const formRef = useRef<HTMLFormElement | null>(null);
   const [csrfTokenValue, setCsrfTokenValue] = useState<string | undefined>(csrfToken);
   const [csrfStatus, setCsrfStatus] = useState<'idle' | 'loading' | 'error'>(
     csrfToken ? 'idle' : 'loading',
   );
+  
 
   useEffect(() => {
     if (state.status === 'success') {
@@ -45,7 +46,6 @@ export function EmailSignInForm({ csrfToken }: EmailSignInFormProps) {
       setCsrfTokenValue(token ?? undefined);
       setCsrfStatus(token ? 'idle' : 'error');
     } catch (error) {
-      console.error('Échec du chargement du jeton CSRF NextAuth', error);
       setCsrfStatus('error');
     }
   }, []);
