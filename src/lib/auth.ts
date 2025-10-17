@@ -37,22 +37,36 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       apiKey: resendApiKey,
       from: emailFrom,
       sendVerificationRequest: async ({ identifier, url }) => {
-        await resendClient.emails.send({
-          from: emailFrom,
-          to: identifier,
-          subject: 'Votre lien de connexion TableRonde',
-          html: `
-            <div style="font-family: sans-serif; line-height: 1.6;">
-              <h1>Connexion à TableRonde</h1>
-              <p>Bonjour,</p>
-              <p>Utilisez le lien ci-dessous pour vous connecter. Il expirera dans 10 minutes.</p>
-              <p><a href="${url}" style="display:inline-block;padding:12px 20px;border-radius:9999px;background:#0f172a;color:#ffffff;text-decoration:none;">Se connecter</a></p>
-              <p>Ou copiez-collez cette URL dans votre navigateur :</p>
-              <p><a href="${url}">${url}</a></p>
-              <p>À très vite pour une nouvelle partie !</p>
-            </div>
-          `,
-        });
+        try {
+          const { error } = await resendClient.emails.send({
+            from: emailFrom,
+            to: identifier,
+            subject: 'Votre lien de connexion TableRonde',
+            html: `
+              <div style="font-family: sans-serif; line-height: 1.6;">
+                <h1>Connexion à TableRonde</h1>
+                <p>Bonjour,</p>
+                <p>Utilisez le lien ci-dessous pour vous connecter. Il expirera dans 10 minutes.</p>
+                <p><a href="${url}" style="display:inline-block;padding:12px 20px;border-radius:9999px;background:#0f172a;color:#ffffff;text-decoration:none;">Se connecter</a></p>
+                <p>Ou copiez-collez cette URL dans votre navigateur :</p>
+                <p><a href="${url}">${url}</a></p>
+                <p>À très vite pour une nouvelle partie !</p>
+              </div>
+            `,
+          });
+
+          if (error) {
+            console.error('Resend failed to send verification email:', error);
+            throw new Error(
+              "Nous n'avons pas pu envoyer l'email de connexion. Veuillez réessayer plus tard."
+            );
+          }
+        } catch (error) {
+          console.error('Unexpected error while sending verification email with Resend:', error);
+          throw new Error(
+            "Nous n'avons pas pu envoyer l'email de connexion. Veuillez réessayer plus tard."
+          );
+        }
       },
     }),
   ],
