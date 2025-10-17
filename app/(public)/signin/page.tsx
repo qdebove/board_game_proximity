@@ -18,8 +18,10 @@ const emailSignInSchema = z.object({
 
 export default async function SignInPage() {
   const cookieStore = await cookies()
-  const csrfCookie = cookieStore.get('authjs.csrf-token')?.value
-  const csrfToken = csrfCookie?.split('|')[0]
+  const csrfCookieValue = ['authjs.csrf-token', '__Secure-authjs.csrf-token', '__Host-authjs.csrf-token']
+    .map((cookieName) => cookieStore.get(cookieName)?.value)
+    .find((value): value is string => Boolean(value))
+  const csrfToken = csrfCookieValue?.split('|')[0]
 
   // ⬇️ Déclare l'action DANS le même fichier
   async function requestEmailSignIn(
